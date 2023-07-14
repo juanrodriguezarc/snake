@@ -10,6 +10,10 @@ public class Food : MonoBehaviour
         RandomizePosition();
     }
 
+    /// <summary>
+    /// Generates a random position for the food
+    /// and re-position the element in the grid
+    /// </summary>
     private void RandomizePosition()
     {
         Bounds bounds =  this.gridArea.bounds;
@@ -20,6 +24,10 @@ public class Food : MonoBehaviour
         this.transform.position = new Vector3(Mathf.Round(x),Mathf.Round(y),0.0f);
     }
 
+    /// <summary>
+    /// Executes the RandomizePosition function when the snakes
+    /// collides with the food
+    /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
     {
         if(other.tag == "Player")

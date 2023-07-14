@@ -13,24 +13,31 @@ public class MenuComponent : MonoBehaviour
     void Start()
     {
         btnLeaderboard.onClick.AddListener(ShowLeaderboard);
-        btnNewGame.onClick.AddListener(HideMenu);
+        btnNewGame.onClick.AddListener(StartNewGame);
         btnExit.onClick.AddListener(ExitGame);
     }
 
-
+    /// <summary>
+    /// Show leaderboard modal
+    /// </summary>
     void ShowLeaderboard()
     {
         Debug.Log("You have clicked the button show game");
     }
 
+    /// <summary>
+    /// Ends application
+    /// </summary>
     void ExitGame()
     {
         Debug.Log("You have clicked the button exit game");
         Application.Quit();
     }
 
-
-    void HideMenu()
+    /// <summary>
+    /// Start a new game
+    /// </summary>
+    void StartNewGame()
     {
         Debug.Log("You have clicked the button! new game");
         isShowing = !isShowing;

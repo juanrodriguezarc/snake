@@ -13,6 +13,9 @@ public class Snake : MonoBehaviour
         ResetState();
     }
 
+    /// <summary>
+    /// Handle snake directional (control assignment)
+    /// </summary>
     private void Update()
     {
         if (Input.GetKeyDown(KeyCode.W))
@@ -33,6 +36,9 @@ public class Snake : MonoBehaviour
         }
     }
 
+    /// <summary>
+    /// Reposition the snake and all the body
+    /// </summary>
     private void FixedUpdate()
     {
         for (int i = _segments.Count - 1; i > 0; i--)
@@ -47,6 +53,9 @@ public class Snake : MonoBehaviour
             0.0f);
     }
 
+    /// <summary>
+    /// Add a snake body prefab to the segments
+    /// </summary>
     private void Grow()
     {
         Transform segment = Instantiate(this.segmentPrefab);
@@ -54,6 +63,9 @@ public class Snake : MonoBehaviour
         _segments.Add(segment);
     }
 
+    /// <summary>
+    /// Destroy all prefabs (snake body)
+    /// </summary>
      private void ResetState()
      {
         for (int i = _segments.Count - 1; i > 0; i--)
@@ -67,6 +79,11 @@ public class Snake : MonoBehaviour
      }
 
 
+    /// <summary>
+    /// Execute functions according to the collition
+    /// Food => Will grow the snake
+    /// Wall & Body => Restart game
+    /// </summary>
     private void OnTriggerEnter2D(Collider2D other)
     {
         if (other.tag == "Food")
