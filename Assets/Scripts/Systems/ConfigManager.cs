@@ -1,37 +1,38 @@
 using System;
 using UnityEngine;
 using System.IO;
+using Snake.Models;
+using Snake.Utility;
 
-namespace snake.Config
+namespace Snake.Config
 {
     public class ConfigManager: Singleton<ConfigManager>
     {
         public static ConfigData Config { get; set; }
-
-        public void SaveConfig()
-        {
-            //Convert the ConfigData object to a JSON string.
-            string json = JsonUtility.ToJson(Config);
+        public static Player Current { get; set; }
 
             //Write the JSON string to a file on disk.
+        public void SaveConfig()
+        {
+            string json = JsonUtility.ToJson(Config);
             File.WriteAllText("config.json", json);
         }
 
+            //Get the JSON string from the file on disk.
         public void LoadConfig()
         {
-            //Get the JSON string from the file on disk.
             string savedJson = File.ReadAllText("config.json");
-
-            //Convert the JSON string back to a ConfigData object.
             Config = JsonUtility.FromJson<ConfigData>(savedJson);
-
             string filepath = Application.dataPath + Config.dbName;
             Debug.Log($"filepath={filepath}");
-
             Config.connectionString = "URI=file:" + filepath;
         }
-    }
 
+        public void LoadCurrentUser(Player player)
+        {
+            Current = player;
+        }
+    }
 
     [Serializable]
     public class ConfigData

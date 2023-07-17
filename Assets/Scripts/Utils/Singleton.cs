@@ -1,25 +1,34 @@
 using UnityEngine;
 
-/// <summary>
-/// Simple singleton implementation for MonoBehaviours.
-///  This is a globally accessible class that exists in the scene, but only once.
-/// </summary>
+namespace Snake.Utility
+{
 
-public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour {
-    public static T Instance { get; private set;}
-    protected virtual void Awake() => Instance = this as T;
+    /// <summary>
+    /// Simple singleton implementation for MonoBehaviours.
+    ///  This is a globally accessible class that exists in the scene, but only once.
+    /// </summary>
 
-   protected virtual void OnApplicationQuit(){
-        Instance =  null;
-        Destroy(gameObject);
-   } 
-}
+    public abstract class Singleton<T> : MonoBehaviour where T : MonoBehaviour
+    {
+        public static T Instance { get; private set; }
+        protected virtual void Awake() => Instance = this as T;
 
-public abstract class SingletonPersistent<T> : Singleton<T> where T : MonoBehaviour {
+        protected virtual void OnApplicationQuit()
+        {
+            Instance = null;
+            Destroy(gameObject);
+        }
+    }
 
-    protected override void Awake(){
-        if(Instance != null) Destroy(gameObject);
-        DontDestroyOnLoad(gameObject);
-        base.Awake();
+    public abstract class SingletonPersistent<T> : Singleton<T> where T : MonoBehaviour
+    {
+
+        protected override void Awake()
+        {
+            if (Instance != null) Destroy(gameObject);
+            DontDestroyOnLoad(gameObject);
+            base.Awake();
+        }
     }
 }
+

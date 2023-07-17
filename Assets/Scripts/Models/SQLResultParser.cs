@@ -1,16 +1,15 @@
 
 using Mono.Data.Sqlite;
-using snake.Config;
+using Snake.Config;
 using Dapper;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 
-namespace snake.DataAccess
+namespace Snake.DataAccess
 {
     public static class SQLResultParser
     {
-
         public static async Task<List<T>> Query<T>(string query)
         {
             // Classic method to get values from reader
@@ -59,12 +58,8 @@ namespace snake.DataAccess
                 await connection.OpenAsync();
                 await connection.ExecuteAsync(query);
                 await connection.CloseAsync();
-                
                 return;
             }
         }
-
-
     }
-
 }

@@ -1,19 +1,21 @@
 using System;
 
-[Serializable]
-public class Player
+namespace Snake.Models
 {
-    public int id;
-    public string name;
-    public int score;
+    [Serializable]
+    public class Player
+    {
+        public int id;
+        public string name;
+        public int score;
 
-    public Player() {}
-    
-    
-    public Player(int id, string name, int score) {
-        this.id = id;
-        this.name = name;
-        this.score = score;
+        public Player() { }
+
+        public Player(int id, string name, int score)
+        {
+            this.id = id;
+            this.name = name;
+            this.score = score;
+        }
     }
-
 }
