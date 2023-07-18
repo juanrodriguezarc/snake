@@ -8,8 +8,9 @@ public class MainSnake : MonoBehaviour
 {
     private readonly List<Transform> _segments = new();
     private int score = 0;
-    private Vector2 _direction = Vector2.right;
+    private Vector2 _direction;
     public Transform segmentPrefab;
+    public float speed = 10.0f;
 
     [SerializeField]
     private TextMeshProUGUI _lblScore;
@@ -39,16 +40,13 @@ public class MainSnake : MonoBehaviour
     /// </summary>
     private void FixedUpdate()
     {
-        for (int i = _segments.Count - 1; i > 0; i--)
-        {
-            _segments[i].position = _segments[i - 1].position;
-        }
+        for (int i = _segments.Count - 1; i > 0; i--) _segments[i].position = _segments[i - 1].position;
 
-        var pos = this.transform.position;
-        this.transform.position = new Vector3(
-            Mathf.Round(pos.x + _direction.x),
-            Mathf.Round(pos.y + _direction.y),
+        var vec = new Vector3(
+            Mathf.Round(_direction.x),
+            Mathf.Round(_direction.y),
             0.0f);
+        this.transform.Translate(vec*speed*Time.deltaTime);
     }
 
     /// <summary>
@@ -117,7 +115,6 @@ public class MainSnake : MonoBehaviour
         score += 100;
         await PlayerDao.UpdateCurrentScore(score);
         _lblScore.text = $"{score}";
-
     }
 
 }

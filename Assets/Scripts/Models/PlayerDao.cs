@@ -11,11 +11,13 @@ namespace Snake.DataAccess
 
         public static async Task CreateTable()
         {
+            string name = System.Environment.MachineName;
             const string query = @"CREATE TABLE IF NOT EXISTS [player] (
                         [id] INTEGER  NOT NULL PRIMARY KEY AUTOINCREMENT,
                         [name] VARCHAR(255)  NOT NULL,
-                        [score] INTEGER DEFAULT '0' NOT NULL)";
+                        [score] INTEGER DEFAULT '0' NOT NULL);";
             await SQLResultParser.Execute(query);
+            await SQLResultParser.Execute($"INSERT INTO player (id, name, score) VALUES (1,'{name}',0) ON CONFLICT(id) DO NOTHING;");
             return;
         }
 
