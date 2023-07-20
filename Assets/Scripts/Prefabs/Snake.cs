@@ -3,13 +3,14 @@ using UnityEngine;
 using Snake.DataAccess;
 using TMPro;
 using Snake.Systems;
+using Unity.Netcode;
 
 public class MainSnake : MonoBehaviour
 {
     private readonly List<Transform> _segments = new();
     private int score = 0;
     private Vector2 _direction;
-    public Transform segmentPrefab;
+    public Transform _bodyPrefab;
     public float speed = 10.0f;
 
     [SerializeField]
@@ -18,10 +19,18 @@ public class MainSnake : MonoBehaviour
     private AudioClip _audioClip;
 
 
+
+
+    // public override void OnNetworkSpawn()
+    // {
+    //     if (!IsOwner) enabled = false;
+    //     // _lblScore = GameObject.Find("Score").GetComponent<TextMeshProUGUI>();
+    // }
+
     private void Start()
     {
         ResetState();
-        AddFirstSegments();
+        //AddFirstSegments();
     }
 
     /// <summary>
@@ -33,6 +42,21 @@ public class MainSnake : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.D) && _direction != Vector2.left) _direction = Vector2.right;
         if (Input.GetKeyDown(KeyCode.A) && _direction != Vector2.right) _direction = Vector2.left;
         if (Input.GetKeyDown(KeyCode.S) && _direction != Vector2.up) _direction = Vector2.down;
+        var pos = this.transform.position;
+        var step = speed * Time.deltaTime;
+
+        this.transform.position = Vector3.MoveTowards(this.transform.position, new Vector3(
+         Mathf.Round(pos.x + _direction.x),
+         Mathf.Round(pos.y + _direction.y),
+         0.0f), step);
+
+        for (int i = _segments.Count - 1; i > 0; i--)
+        {
+            _segments[i].position = Vector3.MoveTowards(_segments[i].position, new Vector3(
+            Mathf.Round(_segments[i - 1].position.x - (_direction.x/2)),
+            Mathf.Round(_segments[i - 1].position.y - (_direction.y/2)),
+            0.0f), step);
+        }
     }
 
     /// <summary>
@@ -40,13 +64,7 @@ public class MainSnake : MonoBehaviour
     /// </summary>
     private void FixedUpdate()
     {
-        for (int i = _segments.Count - 1; i > 0; i--) _segments[i].position = _segments[i - 1].position;
 
-        var vec = new Vector3(
-            Mathf.Round(_direction.x),
-            Mathf.Round(_direction.y),
-            0.0f);
-        this.transform.Translate(vec*speed*Time.deltaTime);
     }
 
     /// <summary>
@@ -54,8 +72,8 @@ public class MainSnake : MonoBehaviour
     /// </summary>
     private void Grow()
     {
-        Transform segment = Instantiate(this.segmentPrefab);
-        segment.position = _segments[^1].position;
+        Transform segment = Instantiate(this._bodyPrefab);
+        segment.position = new Vector3(_segments[^1].position.x - _direction.x, _segments[^1].position.y - _direction.y, 0.0f);
         _segments.Add(segment);
     }
 
@@ -72,18 +90,6 @@ public class MainSnake : MonoBehaviour
         _segments.Clear();
         _segments.Add(this.transform);
         this.transform.position = Vector3.zero;
-    }
-
-    private void AddFirstSegments()
-    {
-        var pos = this.transform.position;
-        for (var count = 1.0f; count < 4.0f; count++)
-        {
-            Transform segment = Instantiate(this.segmentPrefab);
-            segment.position = _segments[^1].position;
-            segment.position = new Vector3(Mathf.Round(-count + pos.x), Mathf.Round(pos.y), 0.0f);
-            _segments.Add(segment);
-        }
     }
 
     /// <summary>
@@ -106,7 +112,7 @@ public class MainSnake : MonoBehaviour
         }
         else if (other.tag == "Body")
         {
-            ResetState();
+            // ResetState();
         }
     }
 
@@ -114,7 +120,7 @@ public class MainSnake : MonoBehaviour
     {
         score += 100;
         await PlayerDao.UpdateCurrentScore(score);
-        _lblScore.text = $"{score}";
+        // _lblScore.text = $"{score}";
     }
 
 }
