@@ -1,6 +1,6 @@
 
 using Mono.Data.Sqlite;
-using Snake.Config;
+using Snake.Systems;
 using Dapper;
 using System.Collections.Generic;
 using System.Linq;

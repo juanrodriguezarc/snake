@@ -1,48 +1,50 @@
-using System.Collections;
-using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 using UnityEngine.UI;
+using Snake.Entities;
 
-public class MenuComponent : MonoBehaviour
+namespace Snake.UI
 {
-    
-    public Button btnNewGame,btnLeaderboard,btnExit;
-    public GameObject menu;
-    private bool isShowing = true;
-
-    void Start()
+    public class MenuComponent : MonoBehaviour
     {
-        btnLeaderboard.onClick.AddListener(ShowLeaderboard);
-        btnNewGame.onClick.AddListener(StartNewGame);
-        btnExit.onClick.AddListener(ExitGame);
+
+        public Button _btnNewGame, _btnHostGame, _btnJoin, _btnExit;
+        public GameObject menu;
+        public GameObject food;
+        private bool isShowing = true;
+
+
+        void Start()
+        {
+            _btnHostGame.onClick.AddListener(HostGame);
+            _btnJoin.onClick.AddListener(JoinGame);
+
+            _btnNewGame.onClick.AddListener(StartNewGame);
+            _btnExit.onClick.AddListener(ExitGame);
+        }
+
+        void StartNewGame()
+        {
+            isShowing = !isShowing;
+            menu.SetActive(isShowing);
+        }
+
+        void ExitGame() => Application.Quit();
+
+        void HostGame()
+        {
+            NetworkManager.Singleton.StartHost();
+            StartNewGame();
+            GameObject go = Instantiate(food, Vector3.zero, Quaternion.identity);
+            go.GetComponent<NetworkObject>().Spawn();
+
+        }
+
+        void JoinGame()
+        {
+            NetworkManager.Singleton.StartClient();
+            StartNewGame();
+        }
+
     }
-
-    /// <summary>
-    /// Show leaderboard modal
-    /// </summary>
-    void ShowLeaderboard()
-    {
-        Debug.Log("You have clicked the button show game");
-    }
-
-    /// <summary>
-    /// Ends application
-    /// </summary>
-    void ExitGame()
-    {
-        Debug.Log("You have clicked the button exit game");
-        Application.Quit();
-    }
-
-    /// <summary>
-    /// Start a new game
-    /// </summary>
-    void StartNewGame()
-    {
-        Debug.Log("You have clicked the button! new game");
-        isShowing = !isShowing;
-        menu.SetActive(isShowing);
-    }
-
-
 }

@@ -1,7 +1,7 @@
 
 using System.Threading.Tasks;
 using Snake.Models;
-using Snake.Config;
+using Snake.Systems;
 
 namespace Snake.DataAccess
 {

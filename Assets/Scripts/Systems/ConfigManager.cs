@@ -4,7 +4,7 @@ using System.IO;
 using Snake.Models;
 using Snake.Utility;
 
-namespace Snake.Config
+namespace Snake.Systems
 {
     public class ConfigManager: Singleton<ConfigManager>
     {
