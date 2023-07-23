@@ -7,28 +7,43 @@ using Unity.Netcode;
 
 namespace Snake.Entities
 {
-    public class SnakeController : MonoBehaviour
+    public class SnakeController : NetworkBehaviour
     {
-        private readonly List<Transform> _segments = new();
-        private int score = 0;
-        private Vector2 _direction;
-        public Transform _bodyPrefab;
-        public float speed = 10.0f;
 
-        [SerializeField]
-        private TextMeshProUGUI _lblScore;
-        [SerializeField]
-        private AudioClip _audioClip;
+        [SerializeField] private bool _serverAuth;
+        [SerializeField] private float _cheapInterpolationTime = 0.1f;
+        private NetworkVariable<PlayerNetworkState> _playerState;
+        private NetworkVariable<int> _netScore = new(0);
 
-        private void Start()
+        [SerializeField] private TextMeshProUGUI _lblScore;
+        [SerializeField] private AudioClip _audioClip;
+        [SerializeField] private Transform _bodyPrefab;
+        [SerializeField] private float speed = 10.0f;
+
+        private Transform _rb;                              // Component reference
+        private Vector3 _posVel;                            // For SmoothDamp
+        private readonly List<Transform> _segments = new(); // Snake body parts
+        private Vector2 _direction;                         //Controls direction
+
+        void Start()
         {
             ResetState();
-            _lblScore = GameObject.Find("Score").GetComponent<TextMeshProUGUI>();
         }
 
-        /// <summary>
-        /// Handle snake directional (control assignment)
-        /// </summary>
+        private void Awake()
+        {
+            _rb = GetComponent<Transform>();
+            _lblScore = GameObject.Find("Score").GetComponent<TextMeshProUGUI>();
+            var permission = _serverAuth ? NetworkVariableWritePermission.Server : NetworkVariableWritePermission.Owner;
+            _playerState = new NetworkVariable<PlayerNetworkState>(writePerm: permission);
+            _netScore.OnValueChanged = OnScoreChange;
+        }
+
+        public override void OnDestroy()
+        {
+            _netScore.OnValueChanged -= OnScoreChange;
+        }
+
         private void Update()
         {
 
@@ -36,29 +51,31 @@ namespace Snake.Entities
             if (Input.GetKeyDown(KeyCode.D) && _direction != Vector2.left) _direction = Vector2.right;
             if (Input.GetKeyDown(KeyCode.A) && _direction != Vector2.right) _direction = Vector2.left;
             if (Input.GetKeyDown(KeyCode.S) && _direction != Vector2.up) _direction = Vector2.down;
-            var pos = this.transform.position;
+            var pos = _rb.position;
             var step = speed * Time.deltaTime;
 
-            this.transform.position = Vector3.MoveTowards(this.transform.position, new Vector3(
-             Mathf.Round(pos.x + _direction.x),
-             Mathf.Round(pos.y + _direction.y),
-             0.0f), step);
+            if (IsOwner)
+            {
+                _rb.position = Vector3.MoveTowards(_rb.position, new Vector3(
+                 Mathf.Round(pos.x + _direction.x),
+                 Mathf.Round(pos.y + _direction.y),
+                 0.0f), step);
+                TransmitState();
+            }
+            else
+            {
+                ConsumeState();
+            }
+
+            var offset = IsOwner ? 2 : 0.5f;
 
             for (int i = _segments.Count - 1; i > 0; i--)
             {
-                _segments[i].position = Vector3.MoveTowards(_segments[i].position, new Vector3(
-                Mathf.Round(_segments[i - 1].position.x - (_direction.x / 2)),
-                Mathf.Round(_segments[i - 1].position.y - (_direction.y / 2)),
+                _segments[i].position = Vector3.Lerp(_segments[i].position, new Vector3(
+                Mathf.Round(_segments[i - 1].position.x - (_direction.x / offset)),
+                Mathf.Round(_segments[i - 1].position.y - (_direction.y / offset)),
                 0.0f), step);
             }
-        }
-
-        /// <summary>
-        /// Reposition the snake and all the body
-        /// </summary>
-        private void FixedUpdate()
-        {
-
         }
 
         /// <summary>
@@ -80,43 +97,97 @@ namespace Snake.Entities
             {
                 Destroy(_segments[i].gameObject);
             }
-
             _segments.Clear();
-            _segments.Add(this.transform);
-            this.transform.position = Vector3.zero;
+            _segments.Add(_rb);
+            _rb.position = Vector3.zero;
         }
 
-        /// <summary>
-        /// Execute functions according to the collition
-        /// Food => Will grow the snake
-        /// Wall & Body => Restart game
-        /// </summary>
+
         private void OnTriggerEnter2D(Collider2D other)
         {
-            Debug.Log("Collition");
+            if (!IsOwner) return;
             if (other.tag == "Food")
             {
                 SoundManager.Instance.PlaySound(_audioClip);
                 Grow();
-                AddScore();
+                AddScoreToDB();
+                CommitScoreServerRpc(_netScore.Value + 1);
             }
-            else if (other.tag == "Wall")
+            if (other.tag == "Wall")
             {
                 ResetState();
-            }
-            else if (other.tag == "Body")
-            {
-                // ResetState();
+                CommitScoreServerRpc(0);
             }
         }
 
-        private async void AddScore()
+        private async void AddScoreToDB()
         {
-            score += 100;
-            await PlayerDao.UpdateCurrentScore(score);
-            _lblScore.text = $"{score}";
+            await PlayerDao.UpdateCurrentScore(_netScore.Value);
+        }
+
+        private void OnScoreChange(int prev, int next)
+        {
+            if (!IsOwner)
+            {
+                if (next != 0) Grow(); else ResetState();
+            }
+
+            if (IsOwner) _lblScore.text = $"{next}";
         }
 
 
+
+        #region Transmit State
+
+        private void TransmitState()
+        {
+            var state = new PlayerNetworkState { Position = _rb.position };
+
+            if (IsServer || !_serverAuth)
+                _playerState.Value = state;
+            else
+                TransmitStateServerRpc(state);
+        }
+
+        [ServerRpc]
+        private void TransmitStateServerRpc(PlayerNetworkState state)
+        {
+            _playerState.Value = state;
+        }
+
+                [ServerRpc]
+        private void CommitScoreServerRpc(int value)
+        {
+            _netScore.Value = value;
+        }
+
+        #endregion
+
+        private void ConsumeState()
+        {
+            _rb.position = Vector3.SmoothDamp(_rb.position, _playerState.Value.Position, ref _posVel, _cheapInterpolationTime);
+        }
+
+        private struct PlayerNetworkState : INetworkSerializable
+        {
+            private float _posX, _posY;
+
+            internal Vector3 Position
+            {
+                get => new(_posX, _posY, 0);
+                set
+                {
+                    _posX = value.x;
+                    _posY = value.y;
+                }
+            }
+
+            public void NetworkSerialize<T>(BufferSerializer<T> serializer) where T : IReaderWriter
+            {
+                serializer.SerializeValue(ref _posX);
+                serializer.SerializeValue(ref _posY);
+            }
+        }
+    
     }
 }

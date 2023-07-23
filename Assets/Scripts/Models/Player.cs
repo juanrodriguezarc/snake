@@ -18,4 +18,7 @@ namespace Snake.Models
             this.score = score;
         }
     }
+
+
+    
 }
